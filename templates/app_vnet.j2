@@ -1,0 +1,8 @@
+! VARIABLES:
+! g2_default_gateway
+
+interface GigabitEthernet2
+ vrf forwarding internal
+ ip address dhcp
+!
+ip route vrf internal 0.0.0.0 0.0.0.0 {{ g2_default_gateway }}

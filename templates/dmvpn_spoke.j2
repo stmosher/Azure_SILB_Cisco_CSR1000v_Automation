@@ -1,0 +1,72 @@
+! VARIABLES:
+! dmvpn_password, dmvpn_address_router, dmvpn_netmask, hub_1_private, hub_1_public, asn
+!
+crypto ikev2 proposal IKEv2_PROPOSAL
+  encryption aes-cbc-192 aes-cbc-256
+  integrity sha256 sha384 sha512
+  group 14 24
+!
+crypto ikev2 policy IKEv2_POLICY
+  proposal IKEv2_PROPOSAL
+!
+crypto ikev2 keyring cisco-ikev2-keyring
+ peer dmvpn-node
+  description symmetric pre-shared key for the hub/spoke
+  address 0.0.0.0 0.0.0.0
+  pre-shared-key {{ dmvpn_password }}
+!
+crypto ikev2 profile cisco-ikev2-profile
+ match address local interface GigabitEthernet1
+ match identity remote any
+ authentication remote pre-share
+ authentication local pre-share key {{ dmvpn_password }}
+ keyring local cisco-ikev2-keyring
+!
+crypto ipsec transform-set AES256/SHA256/TRANSPORT esp-aes 256 esp-sha256-hmac
+ mode transport
+!
+crypto ipsec fragmentation before-encryption
+!
+crypto ipsec security-association replay window-size 128
+!
+crypto ipsec transform-set xform esp-aes 256 esp-sha256-hmac
+ mode transport
+!
+crypto ipsec df-bit clear
+!
+!
+crypto ipsec profile cisco-ipsec-ikev2
+ set transform-set AES256/SHA256/TRANSPORT
+ set ikev2-profile cisco-ikev2-profile
+!
+interface Tunnel1
+ description DMVPN
+ vrf forwarding internal
+ ip address {{ dmvpn_address_router }} {{ dmvpn_netmask }}
+ no ip redirects
+ ip mtu 1400
+ ip nhrp network-id 1
+ ip nhrp nhs {{ hub_1_private }} nbma {{ hub_1_public}} multicast
+ ip tcp adjust-mss 1360
+ tunnel source GigabitEthernet1
+ tunnel mode gre multipoint
+ tunnel key 1
+ tunnel protection ipsec profile cisco-ipsec-ikev2
+!
+interface GigabitEthernet2
+ vrf forwarding internal
+ ip address dhcp
+!
+router bgp {{ asn }}
+ no bgp default ipv4-unicast
+ bgp log-neighbor-changes
+ timers bgp 3 15
+ !
+ address-family ipv4 vrf internal
+  bgp router-id {{ dmvpn_address_router }}
+  neighbor {{ hub_1_private }} remote-as {{ asn }}
+  neighbor {{ hub_1_private }} remote-as next-hop-self
+  maximum-paths 32
+  maximum-paths ibgp 32
+  neighbor {{ hub_1_private }} activate
+  exit-address-family

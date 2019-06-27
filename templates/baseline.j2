@@ -1,0 +1,66 @@
+! VARIABLES:
+! hostname, public_ip
+!
+service password-encryption
+!
+hostname {{ hostname }}
+!
+aaa new-model
+aaa authorization exec default local
+!
+vrf definition internal
+ rd {{ public_ip }}:1
+ !
+ address-family ipv4
+ exit-address-family
+!
+virtual-service csr_mgmt
+ ip shared host-interface GigabitEthernet1
+!
+ip forward-protocol nd
+no ip http server
+no ip http secure-server
+!
+ip prefix-list default-only seq 10 permit 0.0.0.0/0
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+line con 0
+ stopbits 1
+line aux 0
+ stopbits 1
+line vty 0 15
+ login local
+ exec-timeout 0 0
+ transport input ssh
+!
+!
+event manager applet 10interface
+ event none
+ action 1.0 cli command "enable"
+ action 1.1 cli command "config t"
+ action 1.2 cli command "interface gig1"
+ action 1.3 cli command "no negotiation auto"
+ action 1.4 cli command "speed 10000"
+ action 1.2 cli command "interface gig2"
+ action 1.3 cli command "no negotiation auto"
+ action 1.4 cli command "speed 10000"
+ action 2.0 cli command "end"
+!
+event manager applet 1ginterface
+ event none
+ action 1.0 cli command "enable"
+ action 1.1 cli command "config t"
+ action 1.2 cli command "interface gig1"
+ action 1.3 cli command "negotiation auto"
+ action 1.4 cli command "no speed"
+ action 1.5 cli command "interface gig2"
+ action 1.6 cli command "negotiation auto"
+ action 1.7 cli command "no speed"
+ action 2.0 cli command "end"
