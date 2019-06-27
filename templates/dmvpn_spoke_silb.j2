@@ -90,7 +90,7 @@ ip route vrf internal {{ cloud_private_space }} {{ cloud_private_netmask }} {{ g
 ip route vrf internal 168.63.129.16 255.255.255.255 {{ g2_default_gateway }} name azure_SILB
 !
 event manager applet checkBGPmonitor_down
- event syslog pattern "neighbor {{ hub_1_private }} IPv4 Unicast topology base removed from session"
+ event syslog pattern "neighbor {{ hub_1_private }} IPv4 Unicast vpn vrf internal topology base removed from session"
  action 000 puts "BGP is down!"
  action 100 cli command "enable"
  action 101 cli command "config terminal"
@@ -98,7 +98,7 @@ event manager applet checkBGPmonitor_down
  action 103 cli command "shutdown"
 !
 event manager applet checkBGPmonitor_up
- event syslog pattern "BGP-5-ADJCHANGE: neighbor {{ hub_1_private }} Up"
+ event syslog pattern "BGP-5-ADJCHANGE: neighbor {{ hub_1_private }} vpn vrf internal Up"
  action 000 puts "BGP is up!"
  action 100 cli command "enable"
  action 101 cli command "config terminal"

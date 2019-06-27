@@ -34,7 +34,6 @@ import logging
 import gc
 import time
 
-
 if __name__ == '__main__':
     # logging info
     FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -72,22 +71,30 @@ if __name__ == '__main__':
             logger.warning("Unable to access Azure")
             logger.error("{}".format(e))
 
-        cluster_list = list()
-        for i in result_all:
-            try:
-                if i.tags.get(settings.tvpc_program_key, False) and (i.tags.get('tvpc_silb_vnet') == 'True'):
-                    cluster_list.append(i.tags.get(settings.tvpc_program_key))
-            except Exception as e:
-                logger.error("{}".format(e))
-                continue
+        # cluster_list = list()
+        # for i in result_all:
+        #     try:
+        #         if i.tags.get(settings.tvpc_program_key, False) and (i.tags.get('tvpc_silb_vnet') == 'True'):
+        #             cluster_list.append(i.tags.get(settings.tvpc_program_key))
+        #     except Exception as e:
+        #         logger.error("{}".format(e))
+        #         continue
+        #
+        # cluster_list = list(set(cluster_list))
 
-        cluster_list = list(set(cluster_list))
         # Get all silb vnets with associated clusters and silb private addresses
+        try:
+            result_all = network_client.virtual_networks.list_all()
+        except Exception as e:
+            logger.warning("Unable to access Azure")
+            logger.error("{}".format(e))
+
         for i in result_all:
             try:
                 if i.tags.get(settings.tvpc_program_key, False) and (i.tags.get('tvpc_silb_vnet') == 'True'):
                     tvpc_silb_vnets.append(i)
-                elif i.tags.get(settings.tvpc_program_key, False) in cluster_list:
+                # elif i.tags.get(settings.tvpc_program_key, False) in cluster_list:
+                elif i.tags.get(settings.tvpc_program_key, False):
                     tvpc_participants.append(i)
             except Exception as e:
                 logger.error("{}".format(e))
@@ -111,8 +118,8 @@ if __name__ == '__main__':
             temp = i.id.split('/')
             i.rg = temp[4]  # Create resource group name attribute for the participating VNETs
             for s in tvpc_silb_vnets:
-                if (i.tags.get(settings.tvpc_program_key) == s.tags.get(settings.tvpc_program_key)) \
-                        and (i.location == s.location):
+                if (i.tags.get(settings.tvpc_program_key) == s.tags.get(settings.tvpc_program_key)) and (
+                        i.location == s.location):
                     i.partner = True
                     # add statement for if i does not already have a peer with s
                     for x in s.virtual_network_peerings:
@@ -130,8 +137,7 @@ if __name__ == '__main__':
                                 allow_forwarded_traffic=False,
                                 allow_gateway_transit=False,
                                 use_remote_gateways=False,
-                                remote_virtual_network={
-                                    'id': i.id})
+                                remote_virtual_network={'id': i.id})
                             # use the same peering name for both sides to simplify peering termination
                             name = s.name + 'to' + i.name
                             network_client.virtual_network_peerings.create_or_update(s.rg, s.name, name, peer_model)
@@ -141,8 +147,7 @@ if __name__ == '__main__':
                                 allow_forwarded_traffic=True,
                                 allow_gateway_transit=False,
                                 use_remote_gateways=False,
-                                remote_virtual_network={
-                                    'id': s.id})
+                                remote_virtual_network={'id': s.id})
                             # use the same peering name for both sides to simplify peering termination
                             network_client.virtual_network_peerings.create_or_update(i.rg, i.name, name, peer_model)
                             # create a route in i private route table to silb private ip
@@ -153,18 +158,16 @@ if __name__ == '__main__':
                                               'name': 'default_route'})
                             network_client.route_tables.create_or_update(i.rg, 'private_route_table', rt)
                             logger.info("Build peering between {} and {}".format(i.id, s.id))
-                            break
                         except Exception as e:
                             logger.warning("Unable to Build peering between {} and {}".format(i.id, s.id))
                             logger.error("{}".format(e))
-                            break
+                        break
 
         """
-        Any VNET peering still in the tvpc_silb_vnets do not have properly tagged participating VNETs
+        Any VNET peerings still in the tvpc_silb_vnets do not have properly tagged participating VNETs
         Remove routes to SILB from remote VNET
         Remove peering from SILB VNET
         """
-
         for s in tvpc_silb_vnets:
             for x in s.virtual_network_peerings:
                 try:
@@ -178,6 +181,7 @@ if __name__ == '__main__':
                 except Exception as e:
                     logger.warning("Unable to remove peering between {} and {}".format(s.name, remote_vnet_name))
                     logger.error("{}".format(e))
+
         """
         If there are participant VNETs with tags but no SILB VPC, go through and remove peering connections and routes.
         For instance, if removed SILB VNET
@@ -200,7 +204,7 @@ if __name__ == '__main__':
 
         # empty garbage and wait
         counter = 0
-        while counter < 10:
+        while counter < 60:
             gc.collect(generation=2)
             counter += 1
             time.sleep(1)

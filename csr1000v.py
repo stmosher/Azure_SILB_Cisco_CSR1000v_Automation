@@ -80,6 +80,7 @@ class Router:
             return False
 
     def set_license_info(self):
+        logger = logging.getLogger(__name__)
         try:
             # sort all license dictionaries by bandwidth
             # pick the first license that is larger than the requested amount
@@ -98,10 +99,12 @@ class Router:
                 self.license_feature_set = licenses[-1]['license_feature_set']
                 self.license_throughput = licenses[-1]['license_throughput']
             return True
-        except:
+        except Exception as e:
+            logger.error(e)
             return False
 
     def render_smart_license_configure(self):
+        logger = logging.getLogger(__name__)
         try:
             smart_license_configure_template = f"""
             ip name-server {self.settings.dns_server}
@@ -125,10 +128,12 @@ class Router:
             """
             self.smart_license_configure_config = smart_license_configure_template.split('\n')
             return True
-        except:
+        except Exception as e:
+            logger.error(e)
             return False
 
     def render_smart_license_enable(self):
+        logger = logging.getLogger(__name__)
         try:
             smart_license_enable_template = f"""
             license boot level {self.license_feature_set}
@@ -136,7 +141,8 @@ class Router:
             """
             self.smart_license_enable_config = smart_license_enable_template.split('\n')
             return True
-        except:
+        except Exception as e:
+            logger.error(e)
             return False
 
     def configure_router(self, config_input):
@@ -258,6 +264,7 @@ class Router:
         return False
 
     def render_config_from_template(self, template_name, variables_dict=None):
+        logger = logging.getLogger(__name__)
         settings = Settings()
         try:
             with open(template_name, 'r') as t:
@@ -268,7 +275,6 @@ class Router:
                 conf_vars_dict.update(variables_dict)
             conf_vars_dict['settings'] = dict()
             conf_vars_dict['settings']['dmvpn_password'] = settings.dmvpn_password
-            print(conf_vars_dict)
 
             for line in template_data:
                 line = line.rstrip('\n')
@@ -277,7 +283,7 @@ class Router:
                 configuration.append(new_line)
             return configuration
         except Exception as e:
-            print(e)
+            logger.error(e)
             return False
 
 

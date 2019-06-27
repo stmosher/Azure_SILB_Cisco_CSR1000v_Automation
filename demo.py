@@ -570,7 +570,7 @@ def create_vnet(results_queue, creds, subscription, vv):
             config = router.render_config_from_template(template_name='templates/app_vnet.j2', variables_dict=vv)
             if not router.configure_router(config):
                 print('unable to configure router')
-        if not router.configure_router(['event  manager run 10interface']):
+        if not router.configure_router(['end', 'event  manager run 10interface']):
             print('unable to configure 10 gigabitethernet interface')
         router_counter += 1
 
