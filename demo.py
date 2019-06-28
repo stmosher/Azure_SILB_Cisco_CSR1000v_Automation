@@ -101,7 +101,7 @@ def generate_variables(rtr_list, g_vnet_types, g_instance_type, g_region, g_clus
         vars_list[i]['wan_security_group_name'] = g_unique_prefix + str(i)
         random_id = g_unique_prefix + str(random.randrange(10000000, 100000000))
         vars_list[i]['storage_account_name'] = vars_list[i]['resource_group_name'] + random_id
-
+    print(vars_list)
     return vars_list
 
 
@@ -503,9 +503,9 @@ def create_vnet(results_queue, creds, subscription, vv):
             network_interfaces=[nic_0, nic_1]
         )
         image_plan = compute_models.Plan(
-            name='16_10-byol',
-            publisher='cisco',
-            product='cisco-csr-1000v'
+            name=vv['azure_vm_sku'],
+            publisher=vv['azure_vm_publisher'],
+            product=vv['azure_vm_offer']
         )
         if vv['type'] == 'silb':
             vm_profile = compute_models.VirtualMachine(
@@ -673,16 +673,16 @@ if __name__ == '__main__':
         secret=os.environ.get('AZURE_CLIENT_SECRET'),
         tenant=os.environ.get('AZURE_TENANT_ID')
     )
-    azure_vm_publisher = 'cisco',
-    azure_vm_offer = 'cisco-csr-1000v',
-    azure_vm_sku = '16_10-byol',
+    azure_vm_publisher = 'cisco'
+    azure_vm_offer = 'cisco-csr-1000v'
+    azure_vm_sku = '16_10-byol'
     region = 'westus'
     instance_type = 'Standard_DS3_v2'
     cluster = 'dev'
     asn = '65535'
     private_vnet_address_space = '10.100.0.0/21'
     public_vnet_address_space = '172.16.0.0/21'
-    unique_prefix = 'sm10'
+    unique_prefix = 'sm13'
 
     router_list = [1, 1, 1, 2]
     types = ['hub', 'vnet', 'vnet', 'silb']
