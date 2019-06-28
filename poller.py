@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # logging info
     FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(handlers=[
-        logging.FileHandler("{0}/{1}.log".format('./', 'azure_poller_log')),
+        logging.FileHandler("{0}/{1}.log".format('./', 'azure_poller')),
         logging.StreamHandler()], format=FORMAT, level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -64,25 +64,12 @@ if __name__ == '__main__':
         tvpc_silb_vnets = list()
         tvpc_participants = list()
         result_all = list()
-        # Get all unique cluster names
         try:
             result_all = network_client.virtual_networks.list_all()
         except Exception as e:
             logger.warning("Unable to access Azure")
             logger.error("{}".format(e))
 
-        # cluster_list = list()
-        # for i in result_all:
-        #     try:
-        #         if i.tags.get(settings.tvpc_program_key, False) and (i.tags.get('tvpc_silb_vnet') == 'True'):
-        #             cluster_list.append(i.tags.get(settings.tvpc_program_key))
-        #     except Exception as e:
-        #         logger.error("{}".format(e))
-        #         continue
-        #
-        # cluster_list = list(set(cluster_list))
-
-        # Get all silb vnets with associated clusters and silb private addresses
         try:
             result_all = network_client.virtual_networks.list_all()
         except Exception as e:
@@ -93,7 +80,6 @@ if __name__ == '__main__':
             try:
                 if i.tags.get(settings.tvpc_program_key, False) and (i.tags.get('tvpc_silb_vnet') == 'True'):
                     tvpc_silb_vnets.append(i)
-                # elif i.tags.get(settings.tvpc_program_key, False) in cluster_list:
                 elif i.tags.get(settings.tvpc_program_key, False):
                     tvpc_participants.append(i)
             except Exception as e:

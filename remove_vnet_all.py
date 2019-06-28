@@ -46,7 +46,7 @@ def remove_vnet(rgn):
 
 
 if __name__ == '__main__':
-    resource_group_name = ['swm0', 'swm1', 'swm2', 'swm3']
+    resource_group_name = ['sm100', 'sm101', 'sm102', 'sm103', 'swm0']
     processes = list()
 
     for i in resource_group_name:

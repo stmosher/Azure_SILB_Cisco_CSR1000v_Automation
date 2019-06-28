@@ -40,7 +40,8 @@ from config import Settings
 
 
 def generate_variables(rtr_list, g_vnet_types, g_instance_type, g_region, g_cluster, g_asn,
-                       g_private_vnet_address_space, g_public_vnet_address_space, g_unique_prefix):
+                       g_private_vnet_address_space, g_public_vnet_address_space, g_unique_prefix,
+                       g_azure_vm_publisher, g_azure_vm_offer, g_azure_vm_sku):
     """
     Input:
     rtr_list = list of integers specifying how many routers to deploy in VNET
@@ -79,12 +80,13 @@ def generate_variables(rtr_list, g_vnet_types, g_instance_type, g_region, g_clus
             vars_list[i]['lb_name'] = g_unique_prefix + str(i)
             vars_list[i]['availability_set_name'] = g_unique_prefix + str(i)
         vars_list[i]['instance_type'] = g_instance_type
+        vars_list[i]['azure_vm_publisher'] = g_azure_vm_publisher
+        vars_list[i]['azure_vm_offer'] = g_azure_vm_offer
+        vars_list[i]['azure_vm_sku'] = g_azure_vm_sku
         vars_list[i]['vnet_name'] = g_vnet_types[i] + str(i)
         vars_list[i]['random_prefix'] = g_unique_prefix + str(i)
-
         vars_list[i]['cloud_private_space'] = str(private_cidr_net.network_address)
         vars_list[i]['cloud_private_netmask'] = str(private_cidr_net.netmask)
-
         vars_list[i]['region'] = g_region
         vars_list[i]['tvpc_program_key'] = settings.tvpc_program_key
         vars_list[i]['cluster'] = g_cluster
@@ -492,9 +494,9 @@ def create_vnet(results_queue, creds, subscription, vv):
 
         storage_profile = compute_models.StorageProfile(
             image_reference=compute_models.ImageReference(
-                publisher='cisco',
-                offer='cisco-csr-1000v',
-                sku='16_10-byol',
+                publisher=vv['azure_vm_publisher'],
+                offer=vv['azure_vm_offer'],
+                sku=vv['azure_vm_sku'],
                 version='latest')
         )
         network_profile = compute_models.NetworkProfile(
@@ -671,7 +673,9 @@ if __name__ == '__main__':
         secret=os.environ.get('AZURE_CLIENT_SECRET'),
         tenant=os.environ.get('AZURE_TENANT_ID')
     )
-
+    azure_vm_publisher = 'cisco',
+    azure_vm_offer = 'cisco-csr-1000v',
+    azure_vm_sku = '16_10-byol',
     region = 'westus'
     instance_type = 'Standard_DS3_v2'
     cluster = 'dev'
@@ -684,7 +688,8 @@ if __name__ == '__main__':
     types = ['hub', 'vnet', 'vnet', 'silb']
 
     vnet_variables = generate_variables(router_list, types, instance_type, region, cluster, asn,
-                                        private_vnet_address_space, public_vnet_address_space, unique_prefix)
+                                        private_vnet_address_space, public_vnet_address_space, unique_prefix,
+                                        azure_vm_publisher, azure_vm_offer, azure_vm_sku)
 
     # Build Hub First to get DMVPN and BGP info
     results1 = create_hub_vnet(subscription_id, credentials, vnet_variables)
