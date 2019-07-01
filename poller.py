@@ -82,8 +82,7 @@ if __name__ == '__main__':
                     tvpc_silb_vnets.append(i)
                 elif i.tags.get(settings.tvpc_program_key, False):
                     tvpc_participants.append(i)
-            except Exception as e:
-                logger.error("{}".format(e))
+            except:
                 continue
 
         """

@@ -101,7 +101,6 @@ def generate_variables(rtr_list, g_vnet_types, g_instance_type, g_region, g_clus
         vars_list[i]['wan_security_group_name'] = g_unique_prefix + str(i)
         random_id = g_unique_prefix + str(random.randrange(10000000, 100000000))
         vars_list[i]['storage_account_name'] = vars_list[i]['resource_group_name'] + random_id
-    print(vars_list)
     return vars_list
 
 
@@ -682,7 +681,7 @@ if __name__ == '__main__':
     asn = '65535'
     private_vnet_address_space = '10.100.0.0/21'
     public_vnet_address_space = '172.16.0.0/21'
-    unique_prefix = 'sm13'
+    unique_prefix = 'sm15'
 
     router_list = [1, 1, 1, 2]
     types = ['hub', 'vnet', 'vnet', 'silb']

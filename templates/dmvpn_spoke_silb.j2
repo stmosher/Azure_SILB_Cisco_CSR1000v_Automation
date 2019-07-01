@@ -1,6 +1,41 @@
 ! VARIABLES:
 ! dmvpn_password, dmvpn_address_router, dmvpn_netmask, hub_1_private, hub_1_public, asn, cloud_private_space, cloud_private_netmask, g2_default_gateway
 !
+event manager applet checkBGPmonitor_down
+ event syslog pattern "neighbor {{ hub_1_private }} IPv4 Unicast vpn vrf internal topology base removed from session"
+ action 000 puts "BGP is down!"
+ action 100 cli command "enable"
+ action 101 cli command "config terminal"
+ action 102 cli command "interface GigabitEthernet 2"
+ action 103 cli command "shutdown"
+!
+event manager applet checkBGPmonitor_up
+ event syslog pattern "BGP-5-ADJCHANGE: neighbor {{ hub_1_private }} vpn vrf internal Up"
+ action 000 puts "BGP is up!"
+ action 100 cli command "enable"
+ action 101 cli command "config terminal"
+ action 102 cli command "interface GigabitEthernet 2"
+ action 103 cli command "no shutdown"
+!
+flow monitor FM1
+ description very basic
+ record netflow ipv4 original-input
+!
+sampler S1
+ description sample at 50%
+ mode random 1 out-of 2
+!
+interface GigabitEthernet2
+ vrf forwarding internal
+ ip address dhcp
+ ip flow monitor FM1 sampler S1 input
+ shutdown
+!
+! below is your cloud address space from the common.yaml file. This is redistributed into BGP
+ip route vrf internal {{ cloud_private_space }} {{ cloud_private_netmask }} {{ g2_default_gateway }} tag 777 name cloud_space
+! below is the address for the SILB probe return
+ip route vrf internal 168.63.129.16 255.255.255.255 {{ g2_default_gateway }} name azure_SILB
+!
 crypto ikev2 proposal IKEv2_PROPOSAL
   encryption aes-cbc-192 aes-cbc-256
   integrity sha256 sha384 sha512
@@ -53,19 +88,6 @@ interface Tunnel1
  tunnel key 1
  tunnel protection ipsec profile cisco-ipsec-ikev2
 !
-flow monitor FM1
- description very basic
- record netflow ipv4 original-input
-!
-sampler S1
- description sample at 50%
- mode random 1 out-of 2
-!
-interface GigabitEthernet2
- vrf forwarding internal
- ip address dhcp
- ip flow monitor FM1 sampler S1 input
-!
 route-map redist_tag permit 100
  match tag 777
 !
@@ -83,24 +105,3 @@ router bgp {{ asn }}
   maximum-paths ibgp 32
   neighbor {{ hub_1_private }} activate
   exit-address-family
-!
-! below is your cloud address space from the common.yaml file. This is redistributed into BGP
-ip route vrf internal {{ cloud_private_space }} {{ cloud_private_netmask }} {{ g2_default_gateway }} tag 777 name cloud_space
-! below is the address for the SILB probe return
-ip route vrf internal 168.63.129.16 255.255.255.255 {{ g2_default_gateway }} name azure_SILB
-!
-event manager applet checkBGPmonitor_down
- event syslog pattern "neighbor {{ hub_1_private }} IPv4 Unicast vpn vrf internal topology base removed from session"
- action 000 puts "BGP is down!"
- action 100 cli command "enable"
- action 101 cli command "config terminal"
- action 102 cli command "interface GigabitEthernet 2"
- action 103 cli command "shutdown"
-!
-event manager applet checkBGPmonitor_up
- event syslog pattern "BGP-5-ADJCHANGE: neighbor {{ hub_1_private }} vpn vrf internal Up"
- action 000 puts "BGP is up!"
- action 100 cli command "enable"
- action 101 cli command "config terminal"
- action 102 cli command "interface GigabitEthernet 2"
- action 103 cli command "no shutdown"
