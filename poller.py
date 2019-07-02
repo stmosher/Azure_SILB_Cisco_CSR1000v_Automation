@@ -64,11 +64,6 @@ if __name__ == '__main__':
         tvpc_silb_vnets = list()
         tvpc_participants = list()
         result_all = list()
-        try:
-            result_all = network_client.virtual_networks.list_all()
-        except Exception as e:
-            logger.warning("Unable to access Azure")
-            logger.error("{}".format(e))
 
         try:
             result_all = network_client.virtual_networks.list_all()
