@@ -185,6 +185,8 @@ class Router:
             ssh = c.invoke_shell()
             self.prompt(ssh)
             while counter != 4:
+                ssh.send('terminal length 0\n')
+                self.prompt(ssh)
                 ssh.send('show license summary\n')
                 result = self.prompt(ssh)
                 lines = result.splitlines()
@@ -222,6 +224,8 @@ class Router:
                           password=self.password,
                           timeout=15.0)
                 ssh = c.invoke_shell()
+                ssh.send('terminal length 0\n')
+                self.prompt(ssh)
                 ssh.send('show version\n')
                 self.prompt(ssh)
                 ssh.close()
@@ -249,6 +253,8 @@ class Router:
                           password=self.password,
                           timeout=5.0)
                 ssh = c.invoke_shell()
+                ssh.send('terminal length 0\n')
+                self.prompt(ssh)
                 ssh.send('show version\n')
                 self.prompt(ssh)
                 ssh.close()
